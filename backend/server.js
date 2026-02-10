@@ -1,6 +1,6 @@
 import express from "express";
 import QRCode from "qrcode";
-import { createCanvas, loadImage } from "canvas";
+import { createCanvas, loadImage, registerFont } from "canvas";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import {
@@ -13,6 +13,7 @@ import {
 } from "./db.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+registerFont(join(__dirname, "fonts", "Inter.ttf"), { family: "Inter" });
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "fastnacht2025";
@@ -106,7 +107,7 @@ app.get("/api/persons/:id/qrcode", async (req, res) => {
 
   // Draw name below QR code
   ctx.fillStyle = "#000000";
-  ctx.font = "bold 32px sans-serif";
+  ctx.font = "bold 32px Inter";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(person.name, qrSize / 2, qrSize + nameHeight / 2 + padding / 2);
