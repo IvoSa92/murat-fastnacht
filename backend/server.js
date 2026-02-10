@@ -1,5 +1,6 @@
 import express from "express";
 import QRCode from "qrcode";
+import { createCanvas, loadImage } from "canvas";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import {
@@ -59,7 +60,7 @@ app.delete("/api/persons/:id", (req, res) => {
   res.json({ success: true });
 });
 
-// GET /api/persons/:id/qrcode - generate QR code as PNG
+// GET /api/persons/:id/qrcode - generate QR code as PNG with name
 app.get("/api/persons/:id/qrcode", async (req, res) => {
   const person = getPersonById(Number(req.params.id));
   if (!person) {
@@ -67,11 +68,36 @@ app.get("/api/persons/:id/qrcode", async (req, res) => {
   }
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   const scanUrl = `${baseUrl}/scan/${person.id}`;
-  const buffer = await QRCode.toBuffer(scanUrl, {
+
+  const qrSize = 400;
+  const padding = 20;
+  const nameHeight = 60;
+  const totalHeight = qrSize + nameHeight + padding;
+
+  const canvas = createCanvas(qrSize, totalHeight);
+  const ctx = canvas.getContext("2d");
+
+  // White background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, qrSize, totalHeight);
+
+  // Draw QR code
+  const qrBuffer = await QRCode.toBuffer(scanUrl, {
     type: "png",
-    width: 400,
+    width: qrSize,
     margin: 2,
   });
+  const qrImage = await loadImage(qrBuffer);
+  ctx.drawImage(qrImage, 0, 0, qrSize, qrSize);
+
+  // Draw name below QR code
+  ctx.fillStyle = "#000000";
+  ctx.font = "bold 32px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(person.name, qrSize / 2, qrSize + nameHeight / 2 + padding / 2);
+
+  const buffer = canvas.toBuffer("image/png");
   res.set("Content-Type", "image/png");
   res.set("Content-Disposition", `inline; filename="qr-${person.name}.png"`);
   res.send(buffer);

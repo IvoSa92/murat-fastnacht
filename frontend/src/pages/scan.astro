@@ -4,47 +4,47 @@ import Layout from "../layouts/Layout.astro";
 
 <Layout title="Punkt vergeben">
   <div id="scan-result" class="text-center py-12">
-    <p class="text-gray-400 text-lg">Punkt wird vergeben...</p>
+    <p class="text-yellow-200/50 text-lg">Punkt wird vergeben...</p>
   </div>
 
   <script is:inline>
-    const id = window.location.pathname.split("/").filter(Boolean).pop();
-    const API = window.location.origin;
-    const container = document.getElementById("scan-result");
+    var id = window.location.pathname.split("/").filter(Boolean).pop();
+    var container = document.getElementById("scan-result");
 
     async function scan() {
       if (!id || isNaN(Number(id))) {
         container.innerHTML =
-          '<p class="text-red-400 text-xl font-bold">Ungültiger QR-Code!</p>' +
-          '<a href="/" class="mt-4 inline-block text-yellow-400 hover:underline">Zum Scoreboard</a>';
+          '<p class="text-red-300 text-xl font-bold">Ungültiger QR-Code!</p>' +
+          '<a href="/" class="mt-4 inline-block text-yellow-300 hover:underline">Zum Scoreboard</a>';
         return;
       }
 
       try {
-        const res = await fetch(API + "/api/scan/" + id, { method: "POST" });
+        var res = await fetch("/api/scan/" + id, { method: "POST" });
 
         if (!res.ok) {
           container.innerHTML =
-            '<p class="text-red-400 text-xl font-bold">Person nicht gefunden!</p>' +
-            '<a href="/" class="mt-4 inline-block text-yellow-400 hover:underline">Zum Scoreboard</a>';
+            '<p class="text-red-300 text-xl font-bold">Person nicht gefunden!</p>' +
+            '<a href="/" class="mt-4 inline-block text-yellow-300 hover:underline">Zum Scoreboard</a>';
           return;
         }
 
-        const data = await res.json();
+        var data = await res.json();
         container.innerHTML =
-          '<p class="text-green-400 text-2xl font-bold mb-2">+1 Punkt!</p>' +
-          '<p class="text-xl mb-1">Punkt für <span class="font-bold text-yellow-400">' + data.name + '</span> vergeben!</p>' +
-          '<p class="text-3xl font-bold text-yellow-400 mb-6">' + data.score + ' Punkte</p>' +
-          '<a href="/" class="inline-block bg-yellow-400 text-gray-900 font-bold px-6 py-2 rounded-lg hover:bg-yellow-300 transition-colors">Zum Scoreboard</a>' +
-          '<p class="text-gray-500 text-sm mt-4">Weiterleitung in 5 Sekunden...</p>';
+          '<p class="text-6xl mb-4">🎊</p>' +
+          '<p class="text-green-300 text-3xl font-extrabold mb-3">+1 Punkt!</p>' +
+          '<p class="text-xl mb-1">Punkt für <span class="font-bold text-yellow-300">' + data.name + '</span> vergeben!</p>' +
+          '<p class="text-5xl font-extrabold text-yellow-300 my-6">' + data.score + ' Punkte</p>' +
+          '<a href="/" class="inline-block bg-yellow-400 text-purple-900 font-bold px-8 py-3 rounded-xl hover:bg-yellow-300 transition-colors text-lg">Zum Scoreboard</a>' +
+          '<p class="text-yellow-200/40 text-sm mt-4">Weiterleitung in 5 Sekunden...</p>';
 
         setTimeout(function () {
           window.location.href = "/";
         }, 5000);
       } catch (e) {
         container.innerHTML =
-          '<p class="text-red-400 text-xl font-bold">Fehler beim Vergeben des Punktes.</p>' +
-          '<a href="/" class="mt-4 inline-block text-yellow-400 hover:underline">Zum Scoreboard</a>';
+          '<p class="text-red-300 text-xl font-bold">Fehler beim Vergeben des Punktes.</p>' +
+          '<a href="/" class="mt-4 inline-block text-yellow-300 hover:underline">Zum Scoreboard</a>';
       }
     }
 

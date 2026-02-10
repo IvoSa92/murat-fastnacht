@@ -11,16 +11,54 @@ const { title } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
+    <title>{title} - Fastnacht</title>
+    <style>
+      @keyframes confetti-fall {
+        0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(110vh) rotate(720deg); opacity: 0.3; }
+      }
+      .confetti {
+        position: fixed;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        z-index: 0;
+        pointer-events: none;
+        border-radius: 2px;
+      }
+      .confetti:nth-child(1) { left: 5%; background: #e74c3c; animation: confetti-fall 6s linear infinite; animation-delay: 0s; width: 8px; height: 16px; }
+      .confetti:nth-child(2) { left: 15%; background: #f1c40f; animation: confetti-fall 8s linear infinite; animation-delay: 1s; width: 12px; height: 8px; }
+      .confetti:nth-child(3) { left: 25%; background: #2ecc71; animation: confetti-fall 7s linear infinite; animation-delay: 2s; width: 6px; height: 14px; }
+      .confetti:nth-child(4) { left: 38%; background: #9b59b6; animation: confetti-fall 9s linear infinite; animation-delay: 0.5s; width: 10px; height: 10px; }
+      .confetti:nth-child(5) { left: 50%; background: #e67e22; animation: confetti-fall 6.5s linear infinite; animation-delay: 3s; width: 14px; height: 6px; }
+      .confetti:nth-child(6) { left: 62%; background: #e74c3c; animation: confetti-fall 7.5s linear infinite; animation-delay: 1.5s; width: 8px; height: 12px; }
+      .confetti:nth-child(7) { left: 72%; background: #f1c40f; animation: confetti-fall 8.5s linear infinite; animation-delay: 2.5s; width: 12px; height: 12px; }
+      .confetti:nth-child(8) { left: 82%; background: #2ecc71; animation: confetti-fall 6s linear infinite; animation-delay: 0.8s; width: 6px; height: 10px; }
+      .confetti:nth-child(9) { left: 90%; background: #9b59b6; animation: confetti-fall 7s linear infinite; animation-delay: 3.5s; width: 10px; height: 8px; }
+      .confetti:nth-child(10) { left: 95%; background: #e67e22; animation: confetti-fall 9s linear infinite; animation-delay: 1.2s; width: 8px; height: 14px; }
+    </style>
   </head>
-  <body class="min-h-screen bg-gray-900 text-white">
-    <nav class="bg-gray-800 border-b border-gray-700">
-      <div class="max-w-3xl mx-auto px-4 py-3 flex gap-6">
-        <a href="/" class="font-bold hover:text-yellow-400 transition-colors">Scoreboard</a>
-        <a href="/admin" class="hover:text-yellow-400 transition-colors">Admin</a>
+  <body class="min-h-screen bg-gradient-to-b from-purple-900 via-red-900 to-yellow-900 text-white relative overflow-x-hidden">
+    <!-- Confetti -->
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+
+    <nav class="relative z-10 bg-black/30 backdrop-blur-sm border-b border-yellow-500/30">
+      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-6">
+        <span class="text-2xl mr-1">🎭</span>
+        <a href="/" class="font-bold text-yellow-300 hover:text-yellow-100 transition-colors">Scoreboard</a>
+        <a href="/admin" class="text-yellow-300 hover:text-yellow-100 transition-colors">Admin</a>
       </div>
     </nav>
-    <main class="max-w-3xl mx-auto px-4 py-8">
+    <main class="relative z-10 max-w-3xl mx-auto px-4 py-8">
       <slot />
     </main>
   </body>

@@ -3,13 +3,25 @@ import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Scoreboard">
-  <h1 class="text-3xl font-bold mb-6 text-yellow-400">Scoreboard</h1>
-  <div id="scoreboard" class="space-y-2">
-    <p class="text-gray-400">Lade Punkte...</p>
+  <div class="text-center mb-8">
+    <h1 class="text-4xl font-extrabold mb-2">
+      <span class="text-yellow-300">🎉 Fastnacht</span> <span class="text-red-400">Scoreboard</span>
+    </h1>
+    <p class="text-yellow-200/60 text-sm">Aktualisiert sich automatisch</p>
+  </div>
+  <div id="scoreboard" class="space-y-3">
+    <p class="text-yellow-200/50 text-center">Lade Punkte...</p>
   </div>
 
   <script is:inline>
     var container = document.getElementById("scoreboard");
+
+    function medal(i) {
+      if (i === 0) return "🥇";
+      if (i === 1) return "🥈";
+      if (i === 2) return "🥉";
+      return '<span class="text-yellow-200/40 font-bold w-8 inline-block text-right">' + (i + 1) + "</span>";
+    }
 
     async function loadScores() {
       try {
@@ -17,25 +29,26 @@ import Layout from "../layouts/Layout.astro";
         var scores = await res.json();
 
         if (scores.length === 0) {
-          container.innerHTML = '<p class="text-gray-400">Noch keine Personen vorhanden.</p>';
+          container.innerHTML = '<p class="text-yellow-200/50 text-center">Noch keine Personen vorhanden.</p>';
           return;
         }
 
         container.innerHTML = scores
           .map(function (p, i) {
+            var highlight = i === 0 ? "border-yellow-400 bg-yellow-400/10" : "border-white/10 bg-white/5";
             return (
-              '<div class="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3 border border-gray-700">' +
+              '<div class="flex items-center justify-between rounded-xl px-5 py-4 border ' + highlight + ' backdrop-blur-sm">' +
               '<div class="flex items-center gap-3">' +
-              '<span class="text-2xl font-bold text-gray-500 w-8 text-right">' + (i + 1) + "</span>" +
-              '<span class="text-lg font-semibold">' + p.name + "</span>" +
+              '<span class="text-2xl w-10 text-center">' + medal(i) + "</span>" +
+              '<span class="text-lg font-bold">' + p.name + "</span>" +
               "</div>" +
-              '<span class="text-2xl font-bold text-yellow-400">' + p.score + "</span>" +
+              '<span class="text-3xl font-extrabold text-yellow-300">' + p.score + "</span>" +
               "</div>"
             );
           })
           .join("");
       } catch (e) {
-        container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Punkte.</p>';
+        container.innerHTML = '<p class="text-red-300 text-center">Fehler beim Laden der Punkte.</p>';
       }
     }
 
