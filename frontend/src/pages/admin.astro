@@ -9,32 +9,102 @@ import Layout from "../layouts/Layout.astro";
     </h1>
   </div>
 
-  <!-- Add Person Form -->
-  <form id="add-form" class="flex gap-2 mb-8">
-    <input
-      type="text"
-      id="name-input"
-      placeholder="Name eingeben"
-      required
-      class="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-yellow-200/40 focus:outline-none focus:border-yellow-400 backdrop-blur-sm"
-    />
-    <button
-      type="submit"
-      class="bg-yellow-400 text-purple-900 font-bold px-6 py-3 rounded-xl hover:bg-yellow-300 transition-colors"
-    >
-      Hinzufügen
-    </button>
-  </form>
+  <!-- Login -->
+  <div id="login-section" class="max-w-sm mx-auto">
+    <form id="login-form" class="space-y-4">
+      <input
+        type="password"
+        id="password-input"
+        placeholder="Passwort"
+        required
+        class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-yellow-200/40 focus:outline-none focus:border-yellow-400 backdrop-blur-sm text-center text-lg"
+      />
+      <button
+        type="submit"
+        class="w-full bg-yellow-400 text-purple-900 font-bold px-6 py-3 rounded-xl hover:bg-yellow-300 transition-colors"
+      >
+        Anmelden
+      </button>
+      <p id="login-error" class="text-red-300 text-center hidden">Falsches Passwort!</p>
+    </form>
+  </div>
 
-  <!-- Person List -->
-  <div id="persons-list" class="space-y-3">
-    <p class="text-yellow-200/50 text-center">Lade Personen...</p>
+  <!-- Admin Content (hidden until login) -->
+  <div id="admin-section" class="hidden">
+    <!-- Add Person Form -->
+    <form id="add-form" class="flex gap-2 mb-8">
+      <input
+        type="text"
+        id="name-input"
+        placeholder="Name eingeben"
+        required
+        class="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-yellow-200/40 focus:outline-none focus:border-yellow-400 backdrop-blur-sm"
+      />
+      <button
+        type="submit"
+        class="bg-yellow-400 text-purple-900 font-bold px-6 py-3 rounded-xl hover:bg-yellow-300 transition-colors"
+      >
+        Hinzufügen
+      </button>
+    </form>
+
+    <!-- Person List -->
+    <div id="persons-list" class="space-y-3">
+      <p class="text-yellow-200/50 text-center">Lade Personen...</p>
+    </div>
   </div>
 
   <script is:inline>
+    var loginSection = document.getElementById("login-section");
+    var adminSection = document.getElementById("admin-section");
+    var loginForm = document.getElementById("login-form");
+    var loginError = document.getElementById("login-error");
+    var passwordInput = document.getElementById("password-input");
     var form = document.getElementById("add-form");
     var nameInput = document.getElementById("name-input");
     var list = document.getElementById("persons-list");
+    var password = sessionStorage.getItem("adminPassword") || "";
+
+    function adminHeaders() {
+      return { "Content-Type": "application/json", "x-admin-password": password };
+    }
+
+    async function tryLogin(pw) {
+      var res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "x-admin-password": pw },
+      });
+      return res.ok;
+    }
+
+    async function showAdmin() {
+      loginSection.classList.add("hidden");
+      adminSection.classList.remove("hidden");
+      loadPersons();
+    }
+
+    // Check if already logged in
+    if (password) {
+      tryLogin(password).then(function (ok) {
+        if (ok) { showAdmin(); }
+        else { sessionStorage.removeItem("adminPassword"); password = ""; }
+      });
+    }
+
+    loginForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      loginError.classList.add("hidden");
+      var pw = passwordInput.value;
+      var ok = await tryLogin(pw);
+      if (ok) {
+        password = pw;
+        sessionStorage.setItem("adminPassword", pw);
+        showAdmin();
+      } else {
+        loginError.classList.remove("hidden");
+        passwordInput.value = "";
+      }
+    });
 
     async function loadPersons() {
       try {
@@ -70,7 +140,10 @@ import Layout from "../layouts/Layout.astro";
           btn.addEventListener("click", async function () {
             var id = btn.dataset.deleteId;
             if (!confirm("Person wirklich löschen?")) return;
-            await fetch("/api/persons/" + id, { method: "DELETE" });
+            await fetch("/api/persons/" + id, {
+              method: "DELETE",
+              headers: { "x-admin-password": password },
+            });
             loadPersons();
           });
         });
@@ -84,16 +157,23 @@ import Layout from "../layouts/Layout.astro";
       var name = nameInput.value.trim();
       if (!name) return;
 
-      await fetch("/api/persons", {
+      var res = await fetch("/api/persons", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders(),
         body: JSON.stringify({ name: name }),
       });
+
+      if (res.status === 401) {
+        sessionStorage.removeItem("adminPassword");
+        password = "";
+        adminSection.classList.add("hidden");
+        loginSection.classList.remove("hidden");
+        loginError.classList.remove("hidden");
+        return;
+      }
 
       nameInput.value = "";
       loadPersons();
     });
-
-    loadPersons();
   </script>
 </Layout>

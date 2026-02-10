@@ -15,10 +15,24 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "fastnacht2025";
 
 app.use(express.json());
 
+// Middleware: check admin password
+function requireAdmin(req, res, next) {
+  if (req.headers["x-admin-password"] !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: "Falsches Passwort" });
+  }
+  next();
+}
+
 // --- API Routes ---
+
+// POST /api/admin/login - verify admin password
+app.post("/api/admin/login", requireAdmin, (_req, res) => {
+  res.json({ ok: true });
+});
 
 // GET /api/scores - all persons sorted by score
 app.get("/api/scores", (_req, res) => {
@@ -40,8 +54,8 @@ app.get("/api/persons", (_req, res) => {
   res.json(getAllPersons());
 });
 
-// POST /api/persons - create a new person
-app.post("/api/persons", (req, res) => {
+// POST /api/persons - create a new person (admin)
+app.post("/api/persons", requireAdmin, (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ error: "Name ist erforderlich" });
@@ -50,8 +64,8 @@ app.post("/api/persons", (req, res) => {
   res.status(201).json(person);
 });
 
-// DELETE /api/persons/:id - delete a person
-app.delete("/api/persons/:id", (req, res) => {
+// DELETE /api/persons/:id - delete a person (admin)
+app.delete("/api/persons/:id", requireAdmin, (req, res) => {
   const person = getPersonById(Number(req.params.id));
   if (!person) {
     return res.status(404).json({ error: "Person nicht gefunden" });
