@@ -1,0 +1,95 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Admin">
+  <h1 class="text-3xl font-bold mb-6 text-yellow-400">Admin</h1>
+
+  <!-- Add Person Form -->
+  <form id="add-form" class="flex gap-2 mb-8">
+    <input
+      type="text"
+      id="name-input"
+      placeholder="Name eingeben"
+      required
+      class="flex-1 px-4 py-2 rounded-lg bg-gray-800 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400"
+    />
+    <button
+      type="submit"
+      class="bg-yellow-400 text-gray-900 font-bold px-6 py-2 rounded-lg hover:bg-yellow-300 transition-colors"
+    >
+      Hinzufügen
+    </button>
+  </form>
+
+  <!-- Person List -->
+  <div id="persons-list" class="space-y-2">
+    <p class="text-gray-400">Lade Personen...</p>
+  </div>
+
+  <script is:inline>
+    var form = document.getElementById("add-form");
+    var nameInput = document.getElementById("name-input");
+    var list = document.getElementById("persons-list");
+
+    async function loadPersons() {
+      try {
+        var res = await fetch("/api/persons");
+        var persons = await res.json();
+
+        if (persons.length === 0) {
+          list.innerHTML = '<p class="text-gray-400">Noch keine Personen vorhanden.</p>';
+          return;
+        }
+
+        list.innerHTML = persons
+          .map(function (p) {
+            return (
+              '<div class="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3 border border-gray-700">' +
+              "<div>" +
+              '<span class="font-semibold">' + p.name + "</span>" +
+              '<span class="text-gray-400 ml-2">(' + p.score + " Punkte)</span>" +
+              "</div>" +
+              '<div class="flex gap-2">' +
+              '<a href="/api/persons/' + p.id + '/qrcode" download="qr-' + p.name + '.png" ' +
+              'class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500 transition-colors text-sm">' +
+              "QR-Code</a>" +
+              '<button data-delete-id="' + p.id + '" ' +
+              'class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500 transition-colors text-sm">' +
+              "Löschen</button>" +
+              "</div></div>"
+            );
+          })
+          .join("");
+
+        list.querySelectorAll("[data-delete-id]").forEach(function (btn) {
+          btn.addEventListener("click", async function () {
+            var id = btn.dataset.deleteId;
+            if (!confirm("Person wirklich löschen?")) return;
+            await fetch("/api/persons/" + id, { method: "DELETE" });
+            loadPersons();
+          });
+        });
+      } catch (e) {
+        list.innerHTML = '<p class="text-red-400">Fehler beim Laden der Personen.</p>';
+      }
+    }
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var name = nameInput.value.trim();
+      if (!name) return;
+
+      await fetch("/api/persons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name }),
+      });
+
+      nameInput.value = "";
+      loadPersons();
+    });
+
+    loadPersons();
+  </script>
+</Layout>

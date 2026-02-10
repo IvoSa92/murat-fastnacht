@@ -1,0 +1,45 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Scoreboard">
+  <h1 class="text-3xl font-bold mb-6 text-yellow-400">Scoreboard</h1>
+  <div id="scoreboard" class="space-y-2">
+    <p class="text-gray-400">Lade Punkte...</p>
+  </div>
+
+  <script is:inline>
+    var container = document.getElementById("scoreboard");
+
+    async function loadScores() {
+      try {
+        var res = await fetch("/api/scores");
+        var scores = await res.json();
+
+        if (scores.length === 0) {
+          container.innerHTML = '<p class="text-gray-400">Noch keine Personen vorhanden.</p>';
+          return;
+        }
+
+        container.innerHTML = scores
+          .map(function (p, i) {
+            return (
+              '<div class="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3 border border-gray-700">' +
+              '<div class="flex items-center gap-3">' +
+              '<span class="text-2xl font-bold text-gray-500 w-8 text-right">' + (i + 1) + "</span>" +
+              '<span class="text-lg font-semibold">' + p.name + "</span>" +
+              "</div>" +
+              '<span class="text-2xl font-bold text-yellow-400">' + p.score + "</span>" +
+              "</div>"
+            );
+          })
+          .join("");
+      } catch (e) {
+        container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Punkte.</p>';
+      }
+    }
+
+    loadScores();
+    setInterval(loadScores, 5000);
+  </script>
+</Layout>
