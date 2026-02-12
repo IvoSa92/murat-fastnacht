@@ -19,6 +19,17 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS scans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    person_id INTEGER NOT NULL,
+    scanner_ip TEXT NOT NULL,
+    scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+    UNIQUE(person_id, scanner_ip)
+  )
+`);
+
 export function getAllScores() {
   return db.prepare("SELECT id, name, score FROM persons ORDER BY score DESC, name ASC").all();
 }
@@ -38,6 +49,19 @@ export function createPerson(name) {
 
 export function deletePerson(id) {
   return db.prepare("DELETE FROM persons WHERE id = ?").run(id);
+}
+
+export function hasAlreadyScanned(personId, scannerIp) {
+  return !!db.prepare("SELECT 1 FROM scans WHERE person_id = ? AND scanner_ip = ?").get(personId, scannerIp);
+}
+
+export function recordScanAndIncrement(personId, scannerIp) {
+  const txn = db.transaction(() => {
+    db.prepare("INSERT INTO scans (person_id, scanner_ip) VALUES (?, ?)").run(personId, scannerIp);
+    db.prepare("UPDATE persons SET score = score + 1 WHERE id = ?").run(personId);
+    return getPersonById(personId);
+  });
+  return txn();
 }
 
 export function incrementScore(id) {
