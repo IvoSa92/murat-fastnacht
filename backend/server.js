@@ -9,7 +9,8 @@ import {
   getPersonById,
   createPerson,
   deletePerson,
-  incrementScore,
+  hasAlreadyScanned,
+  recordScanAndIncrement,
 } from "./db.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -40,13 +41,21 @@ app.get("/api/scores", (_req, res) => {
   res.json(getAllScores());
 });
 
-// POST /api/scan/:id - increment score for person
+// POST /api/scan/:id - increment score for person (one scan per device)
 app.post("/api/scan/:id", (req, res) => {
-  const person = getPersonById(Number(req.params.id));
+  const personId = Number(req.params.id);
+  const person = getPersonById(personId);
   if (!person) {
     return res.status(404).json({ error: "Person nicht gefunden" });
   }
-  const updated = incrementScore(Number(req.params.id));
+  const scannerId = req.body.scanner_id;
+  if (!scannerId) {
+    return res.status(400).json({ error: "Scanner-ID fehlt" });
+  }
+  if (hasAlreadyScanned(personId, scannerId)) {
+    return res.status(409).json({ error: "Du hast diesen QR-Code bereits gescannt!", name: person.name });
+  }
+  const updated = recordScanAndIncrement(personId, scannerId);
   res.json(updated);
 });
 

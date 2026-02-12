@@ -11,6 +11,41 @@ import Layout from "../layouts/Layout.astro";
     var id = window.location.pathname.split("/").filter(Boolean).pop();
     var container = document.getElementById("scan-result");
 
+    // Unique device ID - generated once, stored in localStorage
+    function getScannerId() {
+      var sid = localStorage.getItem("visitorScannerId");
+      if (!sid) {
+        sid = crypto.randomUUID();
+        localStorage.setItem("visitorScannerId", sid);
+      }
+      return sid;
+    }
+
+    function getScannedIds() {
+      try {
+        return JSON.parse(localStorage.getItem("scannedIds") || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function markAsScanned(personId) {
+      var ids = getScannedIds();
+      if (ids.indexOf(personId) === -1) {
+        ids.push(personId);
+        localStorage.setItem("scannedIds", JSON.stringify(ids));
+      }
+    }
+
+    function showAlreadyScanned(name) {
+      container.innerHTML =
+        '<p class="text-6xl mb-4">🚫</p>' +
+        '<p class="text-orange-300 text-3xl font-extrabold mb-3">Bereits gescannt!</p>' +
+        '<p class="text-xl mb-1">Du hast den QR-Code' + (name ? ' von <span class="font-bold text-yellow-300">' + name + '</span>' : '') + ' bereits gescannt.</p>' +
+        '<p class="text-yellow-200/60 text-base mt-2 mb-6">Jeder QR-Code kann nur einmal pro Person gescannt werden.</p>' +
+        '<a href="/" class="inline-block bg-yellow-400 text-purple-900 font-bold px-8 py-3 rounded-xl hover:bg-yellow-300 transition-colors text-lg">Zum Scoreboard</a>';
+    }
+
     async function scan() {
       if (!id || isNaN(Number(id))) {
         container.innerHTML =
@@ -19,8 +54,25 @@ import Layout from "../layouts/Layout.astro";
         return;
       }
 
+      // Client-side quick check
+      if (getScannedIds().indexOf(id) !== -1) {
+        showAlreadyScanned();
+        return;
+      }
+
       try {
-        var res = await fetch("/api/scan/" + id, { method: "POST" });
+        var res = await fetch("/api/scan/" + id, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scanner_id: getScannerId() })
+        });
+
+        if (res.status === 409) {
+          var errData = await res.json();
+          markAsScanned(id);
+          showAlreadyScanned(errData.name);
+          return;
+        }
 
         if (!res.ok) {
           container.innerHTML =
@@ -30,6 +82,7 @@ import Layout from "../layouts/Layout.astro";
         }
 
         var data = await res.json();
+        markAsScanned(id);
         container.innerHTML =
           '<p class="text-6xl mb-4">🎊</p>' +
           '<p class="text-green-300 text-3xl font-extrabold mb-3">+1 Punkt!</p>' +
