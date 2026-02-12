@@ -16,7 +16,6 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 registerFont(join(__dirname, "fonts", "Inter.ttf"), { family: "Inter" });
 const app = express();
-app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "fastnacht2025";
 
@@ -42,18 +41,21 @@ app.get("/api/scores", (_req, res) => {
   res.json(getAllScores());
 });
 
-// POST /api/scan/:id - increment score for person (one scan per IP)
+// POST /api/scan/:id - increment score for person (one scan per device)
 app.post("/api/scan/:id", (req, res) => {
   const personId = Number(req.params.id);
   const person = getPersonById(personId);
   if (!person) {
     return res.status(404).json({ error: "Person nicht gefunden" });
   }
-  const scannerIp = req.ip;
-  if (hasAlreadyScanned(personId, scannerIp)) {
+  const scannerId = req.body.scanner_id;
+  if (!scannerId) {
+    return res.status(400).json({ error: "Scanner-ID fehlt" });
+  }
+  if (hasAlreadyScanned(personId, scannerId)) {
     return res.status(409).json({ error: "Du hast diesen QR-Code bereits gescannt!", name: person.name });
   }
-  const updated = recordScanAndIncrement(personId, scannerIp);
+  const updated = recordScanAndIncrement(personId, scannerId);
   res.json(updated);
 });
 

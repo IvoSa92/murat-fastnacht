@@ -11,6 +11,16 @@ import Layout from "../layouts/Layout.astro";
     var id = window.location.pathname.split("/").filter(Boolean).pop();
     var container = document.getElementById("scan-result");
 
+    // Unique device ID - generated once, stored in localStorage
+    function getScannerId() {
+      var sid = localStorage.getItem("visitorScannerId");
+      if (!sid) {
+        sid = crypto.randomUUID();
+        localStorage.setItem("visitorScannerId", sid);
+      }
+      return sid;
+    }
+
     function getScannedIds() {
       try {
         return JSON.parse(localStorage.getItem("scannedIds") || "[]");
@@ -44,14 +54,18 @@ import Layout from "../layouts/Layout.astro";
         return;
       }
 
-      // Client-side check: already scanned?
+      // Client-side quick check
       if (getScannedIds().indexOf(id) !== -1) {
         showAlreadyScanned();
         return;
       }
 
       try {
-        var res = await fetch("/api/scan/" + id, { method: "POST" });
+        var res = await fetch("/api/scan/" + id, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scanner_id: getScannerId() })
+        });
 
         if (res.status === 409) {
           var errData = await res.json();
